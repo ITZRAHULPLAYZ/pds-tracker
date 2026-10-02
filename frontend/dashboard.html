@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Ration Card — PDS Tracker</title>
+  <meta name="description" content="View your ration card, monthly entitlements, QR code, and collection history.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .card-qr-layout {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2.5rem;
+      align-items: start;
+    }
+    .ration-card { max-width: 480px; }
+    .card-meta-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+      border-top: 1px solid rgba(245,240,231,0.12);
+      padding-top: 1.25rem;
+    }
+    .card-meta-row .lbl { color: rgba(245,240,231,0.45); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .card-meta-row .val { color: var(--surface); font-size: 0.875rem; margin-top: 0.2rem; }
+    .entitlement-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .entitlement-bar:last-child { border-bottom: none; }
+    .ent-name {
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.5;
+      width: 60px;
+      flex-shrink: 0;
+    }
+    .ent-track {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      position: relative;
+    }
+    .ent-fill {
+      position: absolute;
+      left: 0; top: 0;
+      height: 100%;
+      background: var(--text);
+    }
+    .ent-qty {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 300;
+      width: 70px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo">PDS Tracker <span class="dot">·</span></a>
+  <ul class="nav-links">
+    <li><a href="dashboard.html" class="active">My Card</a></li>
+    <li><a href="grievance.html">Grievances</a></li>
+  </ul>
+  <div class="nav-user">
+    <span id="nav-name">—</span>
+    <button class="btn btn-sm" onclick="auth.logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Header -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2.5rem;">
+    <div>
+      <span class="label">Beneficiary Dashboard</span>
+      <h1 class="page-title" style="margin-top:0.5rem;" id="dash-name">—</h1>
+    </div>
+    <span class="meta-text" id="dash-month">—</span>
+  </div>
+
+  <hr class="rule rule-heavy" style="margin-top:0; margin-bottom:2.5rem;">
+
+  <div id="main-loading" class="loading">Loading your ration card…</div>
+  <div id="main-content" style="display:none;">
+
+    <!-- Card + QR -->
+    <div class="card-qr-layout">
+      <!-- Ration Card -->
+      <div class="ration-card">
+        <div style="background:var(--dark); color:var(--surface); padding:2rem;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <span class="label" style="color:rgba(245,240,231,0.4);">Government of Telangana</span>
+              <div style="font-family:var(--serif); font-size:0.95rem; font-weight:400; color:var(--surface); margin-top:0.25rem; letter-spacing:0.03em;">
+                Ration Card
+              </div>
+            </div>
+            <span id="card-cat-badge" class="badge" style="border-color:rgba(245,240,231,0.3); color:rgba(245,240,231,0.7);"></span>
+          </div>
+          <div class="card-no" style="font-family:var(--serif); font-size:1.8rem; font-weight:300; letter-spacing:0.05em; margin:1.25rem 0 0.25rem; color:var(--surface);" id="card-no">—</div>
+          <div class="card-meta-row">
+            <div>
+              <div class="lbl">Name</div>
+              <div class="val" id="card-name">—</div>
+            </div>
+            <div>
+              <div class="lbl">Family Size</div>
+              <div class="val" id="card-family">—</div>
+            </div>
+            <div>
+              <div class="lbl">Phone</div>
+              <div class="val" id="card-phone">—</div>
+            </div>
+          </div>
+          <div style="margin-top:1rem; border-top: 1px solid rgba(245,240,231,0.12); padding-top:1rem;">
+            <div class="lbl">Assigned Shop</div>
+            <div class="val" id="card-shop" style="margin-top:0.2rem;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Code -->
+      <div>
+        <span class="label" style="margin-bottom:0.75rem;">QR Code</span>
+        <div class="qr-box">
+          <canvas id="qr-canvas"></canvas>
+          <span class="meta-text">Scan at fair price shop</span>
+        </div>
+        <button class="btn btn-sm" style="margin-top:0.75rem; width:100%; justify-content:center;" onclick="downloadQR()">
+          Download QR →
+        </button>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin:2.5rem 0;">
+
+    <!-- Current Month Entitlements -->
+    <div class="two-col-aside" style="gap:3rem;">
+      <div>
+        <span class="label">This Month's Entitlement</span>
+        <div style="font-family:var(--serif); font-size:0.75rem; opacity:0.4; margin-top:0.3rem;" id="ent-month">—</div>
+        <div style="margin-top:1.5rem;" id="ent-bars">
+          <div class="loading">Loading…</div>
+        </div>
+        <div style="margin-top:1.5rem;">
+          <span class="label">Collection Status</span>
+          <div style="margin-top:0.5rem;" id="ent-status">—</div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div>
+        <span class="label">Collection History</span>
+        <div class="table-wrap" style="margin-top:1.25rem;">
+          <table id="history-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Rice</th>
+                <th>Wheat</th>
+                <th>Sugar</th>
+                <th>Oil</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr><td colspan="6" class="loading">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- QR library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

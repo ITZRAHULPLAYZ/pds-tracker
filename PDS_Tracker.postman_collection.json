@@ -1,0 +1,511 @@
+{
+  "info": {
+    "_postman_id": "pds-tracker-collection-v2",
+    "name": "PDS Tracker API",
+    "description": "Complete API collection for PDS Tracker. Run with Newman CLI:\nnewman run PDS_Tracker.postman_collection.json -e PDS_Tracker.postman_environment.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",           "value": "http://localhost:3001", "type": "string" },
+    { "key": "token",             "value": "",                      "type": "string" },
+    { "key": "admin_token",       "value": "",                      "type": "string" },
+    { "key": "beneficiary_token", "value": "",                      "type": "string" },
+    { "key": "beneficiary_id",    "value": "1",                     "type": "string" },
+    { "key": "entitlement_id",    "value": "1",                     "type": "string" },
+    { "key": "grievance_id",      "value": "1",                     "type": "string" },
+    { "key": "shop_id",           "value": "1",                     "type": "string" },
+    { "key": "ration_card_no",    "value": "RC12345678",            "type": "string" },
+    { "key": "test_email",        "value": "",                      "type": "string" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Collection-level: inject current token into every request",
+          "const t = pm.collectionVariables.get('token');",
+          "if (t) pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + t });"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('API is healthy (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Status is ok', () => pm.expect(pm.response.json().status).to.equal('ok'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api","health"] },
+            "description": "Public health check — no token needed."
+          }
+        },
+        {
+          "name": "Register (New Beneficiary)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email each run to avoid duplicate errors",
+                  "const ts = Date.now();",
+                  "const email = 'testuser_' + ts + '@example.com';",
+                  "pm.collectionVariables.set('test_email', email);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registration successful (200)', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "if (res.cardNo) {",
+                  "    pm.collectionVariables.set('ration_card_no', res.cardNo);",
+                  "    console.log('Ration Card No saved:', res.cardNo);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"{{test_email}}\",\n  \"password\": \"pass1234\",\n  \"phone\": \"9876543210\",\n  \"address\": \"12, Gandhi Nagar, Delhi\",\n  \"family_size\": 4,\n  \"category\": \"BPL\",\n  \"aadhar\": \"123456789012\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] },
+            "description": "Registers a new beneficiary with unique timestamped email to avoid duplicates on re-runs."
+          }
+        },
+        {
+          "name": "Login (Beneficiary)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Beneficiary login successful (200)', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.token) {",
+                "    pm.collectionVariables.set('token', res.token);",
+                "    pm.collectionVariables.set('beneficiary_token', res.token);",
+                "    console.log('Token saved (Beneficiary)');",
+                "}",
+                "if (res.profile && res.profile.id) {",
+                "    pm.collectionVariables.set('beneficiary_id', String(res.profile.id));",
+                "    console.log('Beneficiary ID saved:', res.profile.id);",
+                "}",
+                "if (res.profile && res.profile.ration_card_no) {",
+                "    pm.collectionVariables.set('ration_card_no', res.profile.ration_card_no);",
+                "    console.log('Ration card saved:', res.profile.ration_card_no);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"pass1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "description": "Login with the newly registered beneficiary. Token + beneficiary_id + ration_card_no auto-saved."
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Admin login successful (200)', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.token) {",
+                "    pm.collectionVariables.set('token', res.token);",
+                "    pm.collectionVariables.set('admin_token', res.token);",
+                "    console.log('Token saved (Admin)');",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@pds.gov.in\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "description": "Login as Admin — token auto-saved. Also saves admin_token separately."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Beneficiaries",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use beneficiary token directly for this /me route",
+                  "const bToken = pm.collectionVariables.get('beneficiary_token');",
+                  "if (bToken) pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + bToken });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile fetched (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Has ration_card_no', () => pm.expect(pm.response.json()).to.have.property('ration_card_no'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/beneficiaries/me", "host": ["{{baseUrl}}"], "path": ["api","beneficiaries","me"] },
+            "description": "Logged-in beneficiary's full profile. Uses beneficiary token."
+          }
+        },
+        {
+          "name": "Get All Beneficiaries (Admin)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use admin token directly for this admin-only route",
+                  "const aToken = pm.collectionVariables.get('admin_token');",
+                  "if (aToken) pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + aToken });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List fetched (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/beneficiaries", "host": ["{{baseUrl}}"], "path": ["api","beneficiaries"] },
+            "description": "Admin only. All beneficiaries with shop info."
+          }
+        },
+        {
+          "name": "Lookup by Ration Card No",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Card found (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Has name field', () => pm.expect(pm.response.json()).to.have.property('name'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/beneficiaries/card/{{ration_card_no}}", "host": ["{{baseUrl}}"], "path": ["api","beneficiaries","card","{{ration_card_no}}"] },
+            "description": "Lookup by ration card number. Uses card auto-saved from Register+Login."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entitlements",
+      "item": [
+        {
+          "name": "Get My Entitlements (Last 6 Months)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use beneficiary token directly for this /me route",
+                  "const bToken = pm.collectionVariables.get('beneficiary_token');",
+                  "if (bToken) pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + bToken });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Entitlements fetched (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "const entList = pm.response.json();",
+                  "if (Array.isArray(entList) && entList.length > 0) {",
+                  "    const uncollected = entList.find(e => !e.collected) || entList[0];",
+                  "    pm.collectionVariables.set('entitlement_id', String(uncollected.id));",
+                  "    console.log('Entitlement ID saved:', uncollected.id, '| collected:', uncollected.collected);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/entitlements/me", "host": ["{{baseUrl}}"], "path": ["api","entitlements","me"] },
+            "description": "Last 6 months of entitlements. Auto-saves uncollected entitlement_id."
+          }
+        },
+        {
+          "name": "Get Entitlement by Beneficiary ID (Current Month)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Entitlement fetched (200)', () => pm.response.to.have.status(200));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/entitlements/{{beneficiary_id}}", "host": ["{{baseUrl}}"], "path": ["api","entitlements","{{beneficiary_id}}"] },
+            "description": "Current month entitlement for a specific beneficiary."
+          }
+        },
+        {
+          "name": "Mark Entitlement as Collected",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Marked as collected (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Message correct', () => pm.expect(pm.response.json().message).to.equal('Marked as collected'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"shop_id\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/entitlements/{{entitlement_id}}/collect", "host": ["{{baseUrl}}"], "path": ["api","entitlements","{{entitlement_id}}","collect"] },
+            "description": "Mark as collected. One-time per month. Uses auto-saved entitlement_id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "Get All Stock (Admin Summary)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Stock fetched (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/stock", "host": ["{{baseUrl}}"], "path": ["api","stock"] },
+            "description": "Admin only. All shops stock summary."
+          }
+        },
+        {
+          "name": "Get Stock by Shop ID",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Shop stock fetched (200)', () => pm.response.to.have.status(200));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/stock/{{shop_id}}", "host": ["{{baseUrl}}"], "path": ["api","stock","{{shop_id}}"] },
+            "description": "Stock for a specific shop."
+          }
+        },
+        {
+          "name": "Update Stock",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Stock updated (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Message correct', () => pm.expect(pm.response.json().message).to.equal('Stock updated'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"shop_id\": 1,\n  \"commodity\": \"rice\",\n  \"quantity\": 500\n}" },
+            "url": { "raw": "{{baseUrl}}/api/stock/update", "host": ["{{baseUrl}}"], "path": ["api","stock","update"] },
+            "description": "Upsert stock. Valid commodities: rice, wheat, sugar, oil."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grievances",
+      "item": [
+        {
+          "name": "Submit Grievance",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Grievance submitted (200)', () => pm.response.to.have.status(200));",
+                "const gRes = pm.response.json();",
+                "if (gRes.id) {",
+                "    pm.collectionVariables.set('grievance_id', String(gRes.id));",
+                "    console.log('Grievance ID saved:', gRes.id);",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"subject\": \"Rice not received this month\",\n  \"description\": \"The shop keeper denied my rice quota for September 2026.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/grievances", "host": ["{{baseUrl}}"], "path": ["api","grievances"] },
+            "description": "Submit grievance. Auto-saves grievance_id."
+          }
+        },
+        {
+          "name": "Get Grievances",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Grievances fetched (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/grievances", "host": ["{{baseUrl}}"], "path": ["api","grievances"] },
+            "description": "Admin sees all. Beneficiary sees own."
+          }
+        },
+        {
+          "name": "Update Grievance Status (Admin)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status updated (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Message correct', () => pm.expect(pm.response.json().message).to.equal('Status updated'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"in_progress\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/grievances/{{grievance_id}}/status", "host": ["{{baseUrl}}"], "path": ["api","grievances","{{grievance_id}}","status"] },
+            "description": "Admin only. Valid: pending, in_progress, resolved."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard Summary (Admin)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Analytics fetched (200)', () => pm.response.to.have.status(200));",
+                "const stats = pm.response.json();",
+                "pm.test('Has total_beneficiaries',  () => pm.expect(stats).to.have.property('total_beneficiaries'));",
+                "pm.test('Has pending_grievances',   () => pm.expect(stats).to.have.property('pending_grievances'));",
+                "pm.test('Has monthly_collections',  () => pm.expect(stats).to.have.property('monthly_collections'));",
+                "pm.test('Has by_category',          () => pm.expect(stats).to.have.property('by_category'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/analytics/summary", "host": ["{{baseUrl}}"], "path": ["api","analytics","summary"] },
+            "description": "Admin dashboard stats."
+          }
+        },
+        {
+          "name": "Get Public Stats (No Auth)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Public stats fetched (200)', () => pm.response.to.have.status(200));",
+                "pm.test('Has total_beneficiaries', () => pm.expect(pm.response.json()).to.have.property('total_beneficiaries'));",
+                "pm.test('Has total_shops',          () => pm.expect(pm.response.json()).to.have.property('total_shops'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/analytics/public", "host": ["{{baseUrl}}"], "path": ["api","analytics","public"] },
+            "description": "Public — no token required."
+          }
+        }
+      ]
+    }
+  ]
+}

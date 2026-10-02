@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — PDS Tracker</title>
+  <meta name="description" content="Admin analytics dashboard for the Public Distribution System.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin:2rem 0; }
+    .adm-tab {
+      font-size:0.62rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase;
+      padding:0.7rem 1.4rem; border:none; background:none; color:var(--text);
+      opacity:0.38; border-bottom:1px solid transparent; margin-bottom:-1px; cursor:pointer;
+      transition: opacity 0.2s;
+    }
+    .adm-tab.active { opacity:1; border-bottom-color:var(--text); }
+    .adm-pane { display:none; }
+    .adm-pane.active { display:block; }
+    .grievance-row td:first-child { font-family:var(--serif); font-size:1rem; }
+    select.status-sel {
+      font-size:0.65rem; letter-spacing:0.06em; text-transform:uppercase;
+      border:1px solid var(--border); background:var(--bg); color:var(--text);
+      padding:0.3rem 0.5rem; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo">PDS Tracker <span class="dot">·</span></a>
+  <ul class="nav-links">
+    <li><a href="admin.html" class="active">Admin</a></li>
+    <li><a href="shop.html">Shop Portal</a></li>
+  </ul>
+  <div class="nav-user">
+    <span id="nav-name">—</span>
+    <button class="btn btn-sm" onclick="auth.logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+    <div>
+      <span class="label">Admin Dashboard</span>
+      <h1 class="page-title" style="margin-top:0.4rem;">Overview</h1>
+    </div>
+    <span class="meta-text" id="admin-date">—</span>
+  </div>
+
+  <hr class="rule rule-heavy" style="margin-top:0; margin-bottom:0;">
+
+  <!-- Stats strip -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-item">
+      <span class="label">Beneficiaries</span>
+      <span class="val serif" id="st-ben">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="label">Transactions</span>
+      <span class="val serif" id="st-tx">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="label">FP Shops</span>
+      <span class="val serif" id="st-shops">—</span>
+    </div>
+    <div class="stat-item">
+      <span class="label">Open Grievances</span>
+      <span class="val serif" id="st-griev" style="color:var(--accent);">—</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="admin-tabs">
+    <button class="adm-tab active" data-pane="beneficiaries">Beneficiaries</button>
+    <button class="adm-tab" data-pane="grievances">Grievances</button>
+    <button class="adm-tab" data-pane="stock">Stock Levels</button>
+  </div>
+
+  <!-- Beneficiaries tab -->
+  <div class="adm-pane active" id="adm-beneficiaries">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Card No.</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Family</th>
+            <th>Shop</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody id="ben-body">
+          <tr><td colspan="7" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Grievances tab -->
+  <div class="adm-pane" id="adm-grievances">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Beneficiary</th>
+            <th>Subject</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Update</th>
+          </tr>
+        </thead>
+        <tbody id="griev-body">
+          <tr><td colspan="6" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stock tab -->
+  <div class="adm-pane" id="adm-stock">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Shop</th>
+            <th>Commodity</th>
+            <th>Quantity</th>
+            <th>Last Updated</th>
+          </tr>
+        </thead>
+        <tbody id="stock-body">
+          <tr><td colspan="4" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

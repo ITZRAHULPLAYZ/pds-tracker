@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop Portal — PDS Tracker</title>
+  <meta name="description" content="Fair price shop QR verification and stock management portal.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .shop-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+    #qr-reader { width: 100%; border: 1px solid var(--border); }
+    .verify-result {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .verify-result h2 {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 300;
+      margin-bottom: 1rem;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .lbl { opacity: 0.45; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .stock-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .stock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem;
+    }
+    .stock-card .qty {
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      font-weight: 300;
+      line-height: 1;
+      display: block;
+      margin-top: 0.4rem;
+    }
+    .scanner-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      gap: 0.75rem;
+    }
+    .scan-icon { font-size: 2rem; opacity: 0.25; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo">PDS Tracker <span class="dot">·</span></a>
+  <ul class="nav-links">
+    <li><a href="shop.html" class="active">Verification</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+  <div class="nav-user">
+    <span id="nav-name">—</span>
+    <button class="btn btn-sm" onclick="auth.logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div style="margin-bottom:2rem;">
+    <span class="label">Shop Portal</span>
+    <h1 class="page-title" style="margin-top:0.4rem;">QR Verification</h1>
+  </div>
+
+  <hr class="rule rule-heavy" style="margin-top:0; margin-bottom:2.5rem;">
+
+  <div class="shop-layout">
+
+    <!-- Left: Scanner + Lookup -->
+    <div>
+      <span class="label" style="margin-bottom:1rem; display:block;">Scan Ration Card QR</span>
+
+      <div id="scanner-wrap">
+        <div class="scanner-placeholder" id="scanner-placeholder">
+          <div class="scan-icon">▣</div>
+          <p style="font-size:0.8rem; opacity:0.45; text-align:center;">Camera access needed for QR scanning</p>
+          <button class="btn btn-sm" onclick="startScanner()">Start Camera</button>
+        </div>
+        <div id="qr-reader" style="display:none;"></div>
+      </div>
+
+      <hr class="rule" style="margin:1.5rem 0;">
+
+      <span class="label" style="margin-bottom:0.75rem; display:block;">Or Enter Card Number</span>
+      <div style="display:flex; gap:0.75rem;">
+        <input type="text" id="manual-card" placeholder="e.g. RC20240001"
+          style="flex:1; padding:0.65rem 0.8rem; background:var(--surface); border:1px solid var(--border); font-size:0.875rem; outline:none;">
+        <button class="btn btn-solid" onclick="manualLookup()">Verify →</button>
+      </div>
+
+      <div id="verify-err" class="alert alert-error" style="display:none; margin-top:1rem;"></div>
+
+      <!-- Verification result -->
+      <div class="verify-result" id="verify-result" style="display:none;">
+        <h2 id="v-name">—</h2>
+        <div class="info-row">
+          <span class="lbl">Ration Card</span>
+          <span id="v-card">—</span>
+        </div>
+        <div class="info-row">
+          <span class="lbl">Category</span>
+          <span id="v-cat">—</span>
+        </div>
+        <div class="info-row">
+          <span class="lbl">Family Size</span>
+          <span id="v-family">—</span>
+        </div>
+        <div id="ent-section" style="margin-top:1.25rem; display:none;">
+          <hr class="rule">
+          <span class="label" style="margin-bottom:0.75rem; display:block;">This Month's Entitlement</span>
+          <div id="ent-details"></div>
+          <div id="ent-status" style="margin-top:1rem;"></div>
+          <button class="btn btn-solid" id="collect-btn" style="margin-top:1rem; display:none;" onclick="markCollected()">
+            Mark as Collected →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Stock Levels -->
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem;">
+        <span class="label">Shop Stock Levels</span>
+        <span class="meta-text" id="stock-updated">—</span>
+      </div>
+
+      <div class="stock-grid" id="stock-grid">
+        <div class="loading">Loading…</div>
+      </div>
+
+      <hr class="rule" style="margin:2rem 0;">
+
+      <span class="label" style="margin-bottom:1rem; display:block;">Update Stock</span>
+      <div class="panel">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="upd-commodity">Commodity</label>
+            <select id="upd-commodity">
+              <option value="Rice">Rice</option>
+              <option value="Wheat">Wheat</option>
+              <option value="Sugar">Sugar</option>
+              <option value="Oil">Oil</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="upd-qty">Quantity (kg / L)</label>
+            <input type="number" id="upd-qty" placeholder="450" min="0" step="0.5">
+          </div>
+        </div>
+        <div id="stock-msg" class="alert alert-success" style="display:none; margin-bottom:0.75rem;"></div>
+        <button class="btn btn-solid" style="width:100%; justify-content:center;" onclick="updateStock()">
+          Update →
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/shop.js"></script>
+</body>
+</html>

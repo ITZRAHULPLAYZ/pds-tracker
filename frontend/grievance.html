@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grievances — PDS Tracker</title>
+  <meta name="description" content="Submit and track grievances for the Public Distribution System.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .griev-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 3rem;
+      align-items: start;
+    }
+    .griev-item {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .griev-item:last-child { border-bottom: none; }
+    .griev-item h3 {
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 400;
+      margin-bottom: 0.4rem;
+    }
+    .griev-item p {
+      font-size: 0.82rem;
+      opacity: 0.6;
+      line-height: 1.55;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo">PDS Tracker <span class="dot">·</span></a>
+  <ul class="nav-links">
+    <li><a href="dashboard.html">My Card</a></li>
+    <li><a href="grievance.html" class="active">Grievances</a></li>
+  </ul>
+  <div class="nav-user">
+    <span id="nav-name">—</span>
+    <button class="btn btn-sm" onclick="auth.logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div style="margin-bottom:2rem;">
+    <span class="label">Grievance Redressal</span>
+    <h1 class="page-title" style="margin-top:0.4rem;">Complaints &amp; Feedback</h1>
+  </div>
+
+  <hr class="rule rule-heavy" style="margin-top:0; margin-bottom:2.5rem;">
+
+  <div class="griev-layout">
+
+    <!-- Left: Submit form -->
+    <div>
+      <span class="label" style="margin-bottom:1.5rem; display:block;">New Complaint</span>
+
+      <div id="submit-err" class="alert alert-error"   style="display:none;"></div>
+      <div id="submit-ok"  class="alert alert-success" style="display:none;"></div>
+
+      <div class="form-group">
+        <label for="g-subject">Subject</label>
+        <input type="text" id="g-subject" placeholder="Brief description of the issue">
+      </div>
+      <div class="form-group">
+        <label for="g-desc">Description</label>
+        <textarea id="g-desc" rows="5" placeholder="Provide details — date, location, nature of the problem…"></textarea>
+      </div>
+
+      <button class="btn btn-solid" style="width:100%; justify-content:center;" onclick="submitGrievance()">
+        Submit Complaint →
+      </button>
+
+      <hr class="rule" style="margin-top:2rem;">
+      <p style="font-size:0.75rem; opacity:0.4; line-height:1.7;">
+        Complaints are reviewed by district officials within 7 working days.
+        Provide accurate details to help us resolve your issue quickly.
+      </p>
+    </div>
+
+    <!-- Right: My complaints -->
+    <div>
+      <span class="label" style="margin-bottom:1.5rem; display:block;">Your Submissions</span>
+      <div id="griev-list">
+        <p class="loading">Loading…</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/grievance.js"></script>
+</body>
+</html>
