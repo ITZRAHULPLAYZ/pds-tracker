@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shop Portal — PDS Tracker</title>
+  <title>Shop Portal - PDS Tracker</title>
   <meta name="description" content="Fair price shop QR verification and stock management portal.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,10 +77,9 @@
   <a href="index.html" class="nav-logo">PDS Tracker <span class="dot">·</span></a>
   <ul class="nav-links">
     <li><a href="shop.html" class="active">Verification</a></li>
-    <li><a href="admin.html">Admin</a></li>
   </ul>
   <div class="nav-user">
-    <span id="nav-name">—</span>
+    <span id="nav-name">-</span>
     <button class="btn btn-sm" onclick="auth.logout()">Sign Out</button>
   </div>
 </nav>
@@ -122,18 +121,18 @@
 
       <!-- Verification result -->
       <div class="verify-result" id="verify-result" style="display:none;">
-        <h2 id="v-name">—</h2>
+        <h2 id="v-name">-</h2>
         <div class="info-row">
           <span class="lbl">Ration Card</span>
-          <span id="v-card">—</span>
+          <span id="v-card">-</span>
         </div>
         <div class="info-row">
           <span class="lbl">Category</span>
-          <span id="v-cat">—</span>
+          <span id="v-cat">-</span>
         </div>
         <div class="info-row">
           <span class="lbl">Family Size</span>
-          <span id="v-family">—</span>
+          <span id="v-family">-</span>
         </div>
         <div id="ent-section" style="margin-top:1.25rem; display:none;">
           <hr class="rule">
@@ -151,7 +150,7 @@
     <div>
       <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem;">
         <span class="label">Shop Stock Levels</span>
-        <span class="meta-text" id="stock-updated">—</span>
+        <span class="meta-text" id="stock-updated">-</span>
       </div>
 
       <div class="stock-grid" id="stock-grid">
@@ -181,6 +180,12 @@
         <button class="btn btn-solid" style="width:100%; justify-content:center;" onclick="updateStock()">
           Update →
         </button>
+      </div>
+      
+      <div id="admin-alerts-container" style="display:none; margin-top:2rem;">
+        <hr class="rule" style="margin-bottom:2rem;">
+        <span class="label" style="margin-bottom:1rem; display:block; color:var(--accent);">Admin Alerts</span>
+        <div id="admin-alerts-body" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
       </div>
     </div>
 

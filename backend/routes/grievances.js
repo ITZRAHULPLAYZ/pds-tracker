@@ -50,19 +50,53 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// PUT /api/grievances/:id/status — admin updates status
+// PUT /api/grievances/:id/status — admin updates status and optionally adds a note for the shop
 router.put('/:id/status', authenticate, async (req, res) => {
-  const { status } = req.body;
-  const valid = ['pending', 'in_progress', 'resolved'];
-  if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+  const { status, admin_note } = req.body;
+  
+  if (status) {
+    const valid = ['pending', 'in_progress', 'resolved'];
+    if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+  }
 
   try {
-    const resolved_at = status === 'resolved' ? new Date() : null;
-    await db.query(
-      'UPDATE grievances SET status = ?, resolved_at = ? WHERE id = ?',
-      [status, resolved_at, req.params.id]
+    if (status && admin_note !== undefined) {
+      const resolved_at = status === 'resolved' ? new Date() : null;
+      await db.query(
+        'UPDATE grievances SET status = ?, resolved_at = ?, admin_note = ? WHERE id = ?',
+        [status, resolved_at, admin_note, req.params.id]
+      );
+    } else if (status) {
+      const resolved_at = status === 'resolved' ? new Date() : null;
+      await db.query(
+        'UPDATE grievances SET status = ?, resolved_at = ? WHERE id = ?',
+        [status, resolved_at, req.params.id]
+      );
+    } else if (admin_note !== undefined) {
+      await db.query(
+        'UPDATE grievances SET admin_note = ? WHERE id = ?',
+        [admin_note, req.params.id]
+      );
+    }
+    res.json({ message: 'Grievance updated' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/grievances/shop/:shopId — shop owner sees grievances forwarded by admin
+router.get('/shop/:shopId', authenticate, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT g.id, g.subject, g.description, g.status, g.admin_note, g.submitted_at, u.name as beneficiary_name, b.ration_card_no
+       FROM grievances g
+       JOIN beneficiaries b ON g.beneficiary_id = b.id
+       JOIN users u ON b.user_id = u.id
+       WHERE b.shop_id = ? AND g.admin_note IS NOT NULL AND g.admin_note != ''
+       ORDER BY g.submitted_at DESC`,
+      [req.params.shopId]
     );
-    res.json({ message: 'Status updated' });
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

@@ -33,12 +33,11 @@
     document.getElementById('card-no').textContent    = p.ration_card_no;
     document.getElementById('card-name').textContent  = p.name;
     document.getElementById('card-family').textContent= p.family_size + ' members';
-    document.getElementById('card-phone').textContent = p.phone || '—';
+    document.getElementById('card-phone').textContent = p.phone || '-';
     document.getElementById('card-shop').textContent  = p.shop_name || 'Not assigned';
     const catBadge = document.getElementById('card-cat-badge');
     catBadge.textContent = p.category;
     catBadge.className = `badge badge-${p.category.toLowerCase()}`;
-    catBadge.style.cssText = 'border-color:rgba(245,240,231,0.4); color:rgba(245,240,231,0.8);';
   }
 
   function generateQR(cardNo) {
@@ -111,11 +110,11 @@
 
     const collected = current.collected;
     entStatus.innerHTML = collected
-      ? `<span class="badge badge-collected">Collected</span>
+      ? `<span class="badge badge-collected">Completed</span>
          <span style="font-size:0.75rem; opacity:0.45; margin-left:0.75rem;">
            ${current.collected_at ? new Date(current.collected_at).toLocaleDateString('en-IN') : ''}
          </span>`
-      : `<span class="badge badge-pending-ent">Pending</span>
+      : `<span class="badge badge-pending-ent">In Progress</span>
          <span style="font-size:0.75rem; opacity:0.45; margin-left:0.75rem;">Not yet collected this month</span>`;
   }
 
@@ -134,8 +133,9 @@
         <td>${e.oil_liters} L</td>
         <td>
           <span class="badge ${e.collected ? 'badge-collected' : 'badge-pending-ent'}">
-            ${e.collected ? 'Collected' : 'Pending'}
+            ${e.collected ? 'Completed' : 'In Progress'}
           </span>
+          ${e.collected && e.collected_shop_name ? `<div style="font-size:0.75rem; opacity:0.6; margin-top:0.25rem;">from ${e.collected_shop_name}</div>` : ''}
         </td>
       </tr>`).join('');
   }

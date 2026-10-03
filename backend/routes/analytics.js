@@ -3,14 +3,21 @@ const router  = express.Router();
 const db      = require('../db');
 const { authenticate } = require('../middleware/authMiddleware');
 
+// Shared base stats used by both /summary and /public
+async function getBaseStats() {
+  const [[{ total_beneficiaries }]] = await db.query('SELECT COUNT(*) AS total_beneficiaries FROM beneficiaries');
+  const [[{ total_transactions }]]  = await db.query('SELECT COUNT(*) AS total_transactions FROM transactions');
+  const [[{ pending_grievances }]]  = await db.query("SELECT COUNT(*) AS pending_grievances FROM grievances WHERE status = 'pending'");
+  const [[{ total_shops }]]         = await db.query('SELECT COUNT(*) AS total_shops FROM shops');
+  return { total_beneficiaries, total_transactions, pending_grievances, total_shops };
+}
+
 // GET /api/analytics/summary — admin dashboard stats
 router.get('/summary', authenticate, async (req, res) => {
   try {
-    const [[{ total_beneficiaries }]] = await db.query('SELECT COUNT(*) AS total_beneficiaries FROM beneficiaries');
-    const [[{ total_transactions }]]  = await db.query('SELECT COUNT(*) AS total_transactions FROM transactions');
-    const [[{ pending_grievances }]]  = await db.query("SELECT COUNT(*) AS pending_grievances FROM grievances WHERE status = 'pending'");
-    const [[{ total_shops }]]         = await db.query('SELECT COUNT(*) AS total_shops FROM shops');
-    const [[{ collected_this_month }]]= await db.query(
+    const base = await getBaseStats();
+
+    const [[{ collected_this_month }]] = await db.query(
       "SELECT COUNT(*) AS collected_this_month FROM entitlements WHERE collected = TRUE AND month = ?",
       [new Date().toISOString().slice(0, 7)]
     );
@@ -30,10 +37,7 @@ router.get('/summary', authenticate, async (req, res) => {
     );
 
     res.json({
-      total_beneficiaries,
-      total_transactions,
-      pending_grievances,
-      total_shops,
+      ...base,
       collected_this_month,
       by_category,
       monthly_collections,
@@ -48,11 +52,7 @@ router.get('/summary', authenticate, async (req, res) => {
 // GET /api/analytics/public — public stats for login page (no auth)
 router.get('/public', async (req, res) => {
   try {
-    const [[{ total_beneficiaries }]] = await db.query('SELECT COUNT(*) AS total_beneficiaries FROM beneficiaries');
-    const [[{ total_transactions }]]  = await db.query('SELECT COUNT(*) AS total_transactions FROM transactions');
-    const [[{ pending_grievances }]]  = await db.query("SELECT COUNT(*) AS pending_grievances FROM grievances WHERE status = 'pending'");
-    const [[{ total_shops }]]         = await db.query('SELECT COUNT(*) AS total_shops FROM shops');
-    res.json({ total_beneficiaries, total_transactions, pending_grievances, total_shops });
+    res.json(await getBaseStats());
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

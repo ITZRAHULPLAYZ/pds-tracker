@@ -1,4 +1,4 @@
-/* auth.js — session helpers */
+/* auth.js - session helpers */
 
 window.auth = {
   getUser() {

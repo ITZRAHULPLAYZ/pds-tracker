@@ -5,14 +5,43 @@
 
   document.getElementById('nav-name').textContent = user.name;
 
-  // Shop ID — default 1 for demo; in production, derive from user's assigned shop
+  // Shop ID - default 1 for demo; in production, derive from user's assigned shop
   const SHOP_ID = 1;
 
   let currentBeneficiary = null;
   let currentEntitlement = null;
   let html5QrCode        = null;
 
-  // Load stock
+  // Load stock and alerts on start
+  async function init() {
+    await loadStock();
+    await loadAlerts();
+  }
+
+  async function loadAlerts() {
+    try {
+      const alerts = await api.grievances.byShop(SHOP_ID);
+      if (alerts && alerts.length > 0) {
+        document.getElementById('admin-alerts-container').style.display = 'block';
+        const body = document.getElementById('admin-alerts-body');
+        body.innerHTML = alerts.map(a => `
+          <div style="background:var(--surface); border:1px solid var(--accent); padding:1rem; border-radius:4px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+              <strong>${a.beneficiary_name} (${a.ration_card_no})</strong>
+              <span class="meta-text">${new Date(a.submitted_at).toLocaleDateString('en-IN')}</span>
+            </div>
+            <p style="font-size:0.85rem; margin-bottom:0.5rem; opacity:0.8;">${a.subject}</p>
+            <div style="background:rgba(231,76,60,0.08); padding:0.5rem; font-size:0.85rem; border-left:2px solid var(--accent);">
+              <strong>Admin Note:</strong> ${a.admin_note}
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch (e) {
+      console.error('Failed to load alerts', e);
+    }
+  }
+
   async function loadStock() {
     try {
       const stock = await api.stock.byShop(SHOP_ID);
@@ -111,13 +140,13 @@
           <div class="info-row"><span class="lbl">Oil</span><span>${ent.oil_liters} L</span></div>`;
 
         if (ent.collected) {
-          entStatus.innerHTML = `<span class="badge badge-collected">Already Collected</span>
+          entStatus.innerHTML = `<span class="badge badge-collected">Completed</span>
             <span style="font-size:0.75rem; opacity:0.45; margin-left:0.75rem;">
               ${ent.collected_at ? new Date(ent.collected_at).toLocaleDateString('en-IN') : ''}
             </span>`;
           collectBtn.style.display = 'none';
         } else {
-          entStatus.innerHTML = '<span class="badge badge-pending-ent">Not Yet Collected</span>';
+          entStatus.innerHTML = '<span class="badge badge-pending-ent">In Progress</span>';
           collectBtn.style.display = 'block';
         }
       }
@@ -136,12 +165,12 @@
     try {
       await api.entitlements.collect(currentEntitlement.id, SHOP_ID);
       document.getElementById('ent-status').innerHTML =
-        `<span class="badge badge-collected">Collected</span>
+        `<span class="badge badge-collected">Completed</span>
          <span style="font-size:0.75rem; opacity:0.45; margin-left:0.75rem;">${new Date().toLocaleDateString('en-IN')}</span>`;
       btn.style.display = 'none';
       loadStock(); // refresh stock
     } catch (e) {
-      btn.textContent = 'Mark as Collected →';
+      btn.textContent = 'Give Groceries →';
       btn.disabled    = false;
       showError(e.message);
     }
@@ -179,5 +208,5 @@
     setTimeout(() => { el.style.display = 'none'; }, 4000);
   }
 
-  loadStock();
+  init();
 })();

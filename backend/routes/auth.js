@@ -42,6 +42,21 @@ router.post('/register', async (req, res) => {
   const { name, email, password, phone, address, family_size, category, aadhar } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password required' });
 
+  // Email must be a Gmail address
+  if (!email.toLowerCase().endsWith('@gmail.com')) {
+    return res.status(400).json({ error: 'Email must be a Gmail address (ending with @gmail.com)' });
+  }
+
+  // Phone must be exactly 10 digits
+  if (!phone || !/^[0-9]{10}$/.test(phone)) {
+    return res.status(400).json({ error: 'Phone must be exactly 10 digits' });
+  }
+
+  // Aadhar must be exactly 12 digits
+  if (!aadhar || !/^[0-9]{12}$/.test(aadhar)) {
+    return res.status(400).json({ error: 'Aadhar must be exactly 12 digits' });
+  }
+
   try {
     const hashed  = await bcrypt.hash(password, 10);
     const [result] = await db.query(

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDS Tracker — Public Distribution System Portal</title>
+  <title>PDS Tracker - Public Distribution System Portal</title>
   <meta name="description" content="Digital Ration Card and Public Distribution System management portal for Telangana. Beneficiaries, shop owners, and administrators.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,6 +80,29 @@
     .tab-btn.active { opacity: 1; border-bottom-color: var(--text); }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
+
+    /* Field validation */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15%      { transform: translateX(-6px); }
+      30%      { transform: translateX(5px); }
+      45%      { transform: translateX(-4px); }
+      60%      { transform: translateX(3px); }
+      75%      { transform: translateX(-2px); }
+    }
+    .input-error {
+      border-color: var(--accent) !important;
+      animation: shake 0.4s ease;
+    }
+    .field-error {
+      display: block;
+      color: var(--accent);
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      margin-top: 0.3rem;
+      opacity: 0.9;
+    }
     /* Demo hint */
     .demo-hint {
       background: rgba(23,22,20,0.04);
@@ -110,7 +133,6 @@
   <!-- Left editorial panel -->
   <div class="login-left">
     <div>
-      <span class="label">01 — Introduction</span>
       <h1 class="hero-h1">
         Food Security,<br>
         <em>Transparent</em><br>
@@ -119,7 +141,7 @@
       <p class="hero-sub">
         A digital interface for India's Public Distribution System.
         Verify entitlements, track stock at fair price shops,
-        and submit grievances — all in one place.
+        and submit grievances - all in one place.
       </p>
     </div>
 
@@ -127,29 +149,27 @@
       <div class="stats-strip">
         <div class="stat">
           <span class="label">Beneficiaries</span>
-          <span class="val serif" id="s-ben">—</span>
+          <span class="val serif" id="s-ben">-</span>
         </div>
         <div class="stat">
           <span class="label">FP Shops</span>
-          <span class="val serif" id="s-shops">—</span>
+          <span class="val serif" id="s-shops">-</span>
         </div>
         <div class="stat">
           <span class="label">Transactions</span>
-          <span class="val serif" id="s-tx">—</span>
+          <span class="val serif" id="s-tx">-</span>
         </div>
         <div class="stat">
           <span class="label">Open Complaints</span>
-          <span class="val serif" id="s-g">—</span>
+          <span class="val serif" id="s-g">-</span>
         </div>
       </div>
-      <p class="meta-text" style="margin-top:1rem;">Est. 2024 &nbsp;·&nbsp; Hyderabad, India</p>
+
     </div>
   </div>
 
   <!-- Right login panel -->
   <div class="login-right">
-    <span class="label" style="margin-bottom:2rem; display:block;">Access Portal</span>
-
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="login">Sign In</button>
       <button class="tab-btn" data-tab="register">New Registration</button>
@@ -185,21 +205,21 @@
 
       <div class="form-group">
         <label for="r-name">Full Name (as per Aadhar)</label>
-        <input type="text" id="r-name" placeholder="Priya Sharma">
+        <input type="text" id="r-name" placeholder="Priya Sharma" required>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label for="r-email">Email</label>
+          <label for="r-email">Email (Gmail only)</label>
           <input type="email" id="r-email" placeholder="name@gmail.com">
         </div>
         <div class="form-group">
           <label for="r-pass">Password</label>
-          <input type="password" id="r-pass" placeholder="••••••••">
+          <input type="password" id="r-pass" placeholder="••••••••" required>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label for="r-phone">Phone</label>
+          <label for="r-phone">Phone (10 digits)</label>
           <input type="tel" id="r-phone" placeholder="9876543210" maxlength="10">
         </div>
         <div class="form-group">
@@ -211,13 +231,13 @@
         <div class="form-group">
           <label for="r-cat">Category</label>
           <select id="r-cat">
-            <option value="APL">APL — Above Poverty Line</option>
-            <option value="BPL" selected>BPL — Below Poverty Line</option>
-            <option value="AAY">AAY — Antyodaya Anna Yojana</option>
+            <option value="APL">APL - Above Poverty Line</option>
+            <option value="BPL" selected>BPL - Below Poverty Line</option>
+            <option value="AAY">AAY - Antyodaya Anna Yojana</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="r-aadhar">Aadhar Number</label>
+          <label for="r-aadhar">Aadhar Number (12 digits)</label>
           <input type="text" id="r-aadhar" placeholder="123456789012" maxlength="12">
         </div>
       </div>
@@ -231,10 +251,6 @@
       </button>
     </div>
 
-    <hr class="rule" style="margin-top:2rem;">
-    <p style="font-size:0.75rem; opacity:0.4; line-height:1.6;">
-      Shop owners and administrators are provisioned by the district office.
-    </p>
   </div>
 </div>
 
@@ -280,19 +296,58 @@
 
   // Register
   async function doRegister() {
+    // Clear previous errors
+    document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+    document.querySelectorAll('.field-error').forEach(el => el.remove());
+
+    const fields = {
+      name:   document.getElementById('r-name'),
+      email:  document.getElementById('r-email'),
+      pass:   document.getElementById('r-pass'),
+      phone:  document.getElementById('r-phone'),
+      aadhar: document.getElementById('r-aadhar')
+    };
+
     const payload = {
-      name:        document.getElementById('r-name').value.trim(),
-      email:       document.getElementById('r-email').value.trim(),
-      password:    document.getElementById('r-pass').value,
-      phone:       document.getElementById('r-phone').value.trim(),
+      name:        fields.name.value.trim(),
+      email:       fields.email.value.trim().toLowerCase(),
+      password:    fields.pass.value,
+      phone:       fields.phone.value.trim(),
       family_size: parseInt(document.getElementById('r-family').value) || 1,
       category:    document.getElementById('r-cat').value,
-      aadhar:      document.getElementById('r-aadhar').value.trim(),
+      aadhar:      fields.aadhar.value.trim(),
       address:     document.getElementById('r-addr').value.trim()
     };
+
     const errEl = document.getElementById('reg-err');
     const okEl  = document.getElementById('reg-ok');
     errEl.style.display = okEl.style.display = 'none';
+
+    // Per-field validation
+    let hasError = false;
+
+    function markError(input, msg) {
+      hasError = true;
+      input.classList.add('input-error');
+      // Re-trigger animation if already has the class
+      void input.offsetWidth;
+      const hint = document.createElement('span');
+      hint.className = 'field-error';
+      hint.textContent = msg;
+      input.parentElement.appendChild(hint);
+    }
+
+    if (!payload.name) markError(fields.name, 'Full name is required');
+    if (!payload.email) markError(fields.email, 'Email is required');
+    else if (!payload.email.endsWith('@gmail.com')) markError(fields.email, 'Must be a @gmail.com address');
+    if (!payload.password) markError(fields.pass, 'Password is required');
+    if (!payload.phone) markError(fields.phone, 'Phone number is required');
+    else if (!/^[0-9]{10}$/.test(payload.phone)) markError(fields.phone, 'Must be exactly 10 digits');
+    if (!payload.aadhar) markError(fields.aadhar, 'Aadhar number is required');
+    else if (!/^[0-9]{12}$/.test(payload.aadhar)) markError(fields.aadhar, 'Must be exactly 12 digits');
+
+    if (hasError) return;
+
     try {
       const res = await api.auth.register(payload);
       okEl.innerHTML = `Registration successful.<br>Your Ration Card No: <strong>${res.cardNo}</strong>. You can now sign in.`;
@@ -302,6 +357,15 @@
       errEl.style.display = 'block';
     }
   }
+
+  // Clear field errors on input
+  document.querySelectorAll('#pane-register input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      inp.classList.remove('input-error');
+      const err = inp.parentElement.querySelector('.field-error');
+      if (err) err.remove();
+    });
+  });
 
   // Public stats
   api.analytics.public().then(d => {

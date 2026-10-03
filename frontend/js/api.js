@@ -1,4 +1,4 @@
-/* api.js — thin fetch wrapper for PDS Tracker */
+/* api.js - thin fetch wrapper for PDS Tracker */
 const API_BASE = 'http://localhost:3001/api';
 
 function getToken() {
@@ -43,7 +43,8 @@ window.api = {
   grievances: {
     submit:       (data)         => apiFetch('/grievances',           { method: 'POST', body: JSON.stringify(data) }),
     all:          ()             => apiFetch('/grievances'),
-    updateStatus: (id, status)   => apiFetch(`/grievances/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) })
+    byShop:       (shopId)       => apiFetch(`/grievances/shop/${shopId}`),
+    updateStatus: (id, status, admin_note) => apiFetch(`/grievances/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, admin_note }) })
   },
   analytics: {
     summary: ()  => apiFetch('/analytics/summary'),
